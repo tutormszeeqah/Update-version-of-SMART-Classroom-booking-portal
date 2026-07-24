@@ -5,6 +5,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, date
 import calendar
+import urllib.parse
 from PIL import Image
 from streamlit_gsheets import GSheetsConnection
 
@@ -16,6 +17,9 @@ st.set_page_config(
     page_icon="💻",
     layout="wide"
 )
+
+# Admin WhatsApp Phone Number (Replace with Admin's number)
+ADMIN_WA_NUMBER = "6737318186"
 
 # Initialize Google Sheets Connection
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -143,6 +147,13 @@ with tab_book:
         with col2:
             booking_date = st.date_input("Date *", min_value=date.today())
             time_slot = st.selectbox("Time Slot *", TIME_SLOTS)
+            
+            # Notification Preference Selector
+            notify_option = st.selectbox("Notify Admin via", [
+                "Email Notification", 
+                "WhatsApp Link", 
+                "No Notification"
+            ])
 
         submitted = st.form_submit_button("Submit & Confirm Reservation")
 
@@ -201,8 +212,30 @@ with tab_book:
                             st.markdown(f"⏰ **Time Slot:** `{time_slot}`")
                             st.markdown("STATUS: `CONFIRMED`")
 
-                    # Dispatch Email Notification
-                    send_notification_email(new_entry.iloc[0].to_dict())
+                    # ------------------------------------------
+                    # DYNAMIC NOTIFICATION DISPATCH
+                    # ------------------------------------------
+                    booking_dict = new_entry.iloc[0].to_dict()
+                    
+                    if notify_option == "Email Notification":
+                        with st.spinner("Notifying Admin via automated email..."):
+                            email_sent = send_notification_email(booking_dict)
+                        if email_sent:
+                            st.info("✉️ Admin notified via automated email.")
+                            
+                    elif notify_option == "WhatsApp Link":
+                        wa_message = (
+                            f"📌 *NEW SMARTLAB BOOKING NOTIFICATION*\n\n"
+                            f"👤 *Name:* {name}\n"
+                            f"🏢 *Department:* {department}\n"
+                            f"🏫 *Facility:* {facility}\n"
+                            f"📅 *Date:* {date_str}\n"
+                            f"⏰ *Time Slot:* {time_slot}"
+                        )
+                        encoded_msg = urllib.parse.quote(wa_message)
+                        wa_url = f"https://wa.me/{ADMIN_WA_NUMBER}?text={encoded_msg}"
+                        
+                        st.markdown(f'👉 [**Click Here to Send WhatsApp Notification to Admin**]({wa_url})')
 
 # ------------------------------------------
 # TAB 2: INTERACTIVE CALENDAR SCHEDULE VIEW
