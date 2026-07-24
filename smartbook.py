@@ -4,6 +4,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, date
+import calendar
 from PIL import Image
 from streamlit_gsheets import GSheetsConnection
 
@@ -122,15 +123,15 @@ with st.sidebar:
 st.title("💻 Smart Classroom Booking Platform")
 st.markdown("Pusat Tingkatan Enam Sengkurong")
 
-tab_book, tab_view, tab_admin = st.tabs(["📝 New Booking", "📅 Schedule View", "🔒 Admin Portal"])
+tab_book, tab_calendar, tab_admin = st.tabs(["📝 New Booking", "📅 Interactive Calendar", "🔒 Admin Portal"])
 
 # ------------------------------------------
-# TAB 1: NEW BOOKING FORM
+# TAB 1: NEW BOOKING FORM & PREVIEW
 # ------------------------------------------
 with tab_book:
     st.subheader("Reserve a Smart Classroom Facility")
     
-    with st.form("booking_form", clear_on_submit=True):
+    with st.form("booking_form", clear_on_submit=False):
         col1, col2 = st.columns(2)
         
         with col1:
@@ -145,7 +146,7 @@ with tab_book:
             booking_date = st.date_input("Date *", min_value=date.today())
             time_slot = st.selectbox("Time Slot *", TIME_SLOTS)
 
-        submitted = st.form_submit_button("Confirm & Reserve")
+        submitted = st.form_submit_button("Submit & Confirm Reservation")
 
         if submitted:
             if not name:
@@ -154,7 +155,7 @@ with tab_book:
                 date_str = booking_date.strftime("%Y-%m-%d")
                 df_existing = load_booking_data()
 
-                # Clash Detection Logic using Google Sheet column names
+                # Clash Detection Logic
                 clash = False
                 if not df_existing.empty and {"Date", "Time_Slot", "Facilities"}.issubset(df_existing.columns):
                     matches = df_existing[
@@ -166,7 +167,7 @@ with tab_book:
                         clash = True
 
                 if clash:
-                    st.error(f"❌ **Booking Conflict:** {facility} is already booked for **{time_slot}** on **{date_str}**. Please choose a different slot or room.")
+                    st.error(f"❌ **Booking Conflict:** {facility} is already booked for **{time_slot}** on **{date_str}**. Please select another slot or room.")
                 else:
                     # New booking entry matching exact Google Sheet headers
                     new_entry = pd.DataFrame([{
@@ -181,34 +182,111 @@ with tab_book:
                     updated_df = pd.concat([df_existing, new_entry], ignore_index=True)
                     conn.update(data=updated_df)
                     
-                    st.success(f"🎉 Success! {facility} has been successfully reserved for {date_str} ({time_slot}).")
+                    st.success("🎉 Booking successfully recorded!")
                     
-                    # Send Email Notification
+                    # ------------------------------------------
+                    # BOOKED SMARTLAB PREVIEW CARD FORMAT
+                    # ------------------------------------------
+                    st.markdown("---")
+                    st.markdown("### 📋 Booked SmartLab Reservation Summary")
+                    
+                    preview_container = st.container(border=True)
+                    with preview_container:
+                        p_col1, p_col2 = st.columns(2)
+                        with p_col1:
+                            st.markdown(f"👤 **Name:** `{name}`")
+                            st.markdown(f"🏢 **Department:** `{department}`")
+                            st.markdown(f"🏫 **Facility / Room:** `{facility}`")
+                        with p_col2:
+                            st.markdown(f"📅 **Date:** `{date_str}`")
+                            st.markdown(f"⏰ **Time Slot:** `{time_slot}`")
+                            st.markdown("STATUS: `CONFIRMED`")
+
+                    # Dispatch Email Notification
                     send_notification_email(new_entry.iloc[0].to_dict())
 
 # ------------------------------------------
-# TAB 2: SCHEDULE VIEW
+# TAB 2: INTERACTIVE CALENDAR SCHEDULE VIEW
 # ------------------------------------------
-with tab_view:
-    st.subheader("Current Classroom Reservations")
-    df_records = load_booking_data()
+with tab_calendar:
+    st.subheader("📅 Monthly Interactive Schedule Calendar")
     
-    if df_records.empty:
-        st.info("No active classroom bookings recorded yet.")
+    master_data = load_booking_data()
+
+    # Date / Month Selection Controls
+    col_m, col_y = st.columns(2)
+    with col_m:
+        month_names = list(calendar.month_name)[1:]
+        selected_month_str = st.selectbox("Select Month", month_names, index=datetime.today().month - 1)
+        selected_month = month_names.index(selected_month_str) + 1
+    with col_y:
+        selected_year = st.number_input("Select Year", min_value=2024, max_value=2030, value=datetime.today().year)
+
+    # Initialize Active Selected Day in Session State
+    if 'selected_calendar_day' not in st.session_state:
+        st.session_state.selected_calendar_day = datetime.today().day
+
+    if not master_data.empty:
+        display_df = master_data.copy()
+        display_df['datetime_obj'] = pd.to_datetime(display_df['Date'], errors='coerce')
+
+        # Filter dataset for selected month & year
+        month_data = display_df[
+            (display_df['datetime_obj'].dt.month == selected_month) &
+            (display_df['datetime_obj'].dt.year == selected_year)
+        ]
+
+        # Generate Calendar Matrix (Monday start)
+        cal = calendar.Calendar(firstweekday=0)
+        month_days = cal.monthdayscalendar(selected_year, selected_month)
+
+        # Header Columns
+        days_header = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        cols = st.columns(7)
+        for idx, header in enumerate(days_header):
+            cols[idx].markdown(f"### {header}")
+
+        st.divider()
+
+        # Render Grid Cells
+        for week in month_days:
+            grid_cols = st.columns(7)
+            for i, day in enumerate(week):
+                with grid_cols[i]:
+                    if day != 0:
+                        day_str = f"{selected_year}-{selected_month:02d}-{day:02d}"
+                        day_bookings = month_data[month_data['Date'].astype(str) == day_str]
+                        booking_count = len(day_bookings)
+
+                        if booking_count > 0:
+                            label = f"🔴 {day:02d} ({booking_count})"
+                        else:
+                            label = f"⚪ {day:02d}"
+
+                        if st.button(label, key=f"btn_day_{day}_{selected_month}_{selected_year}", use_container_width=True):
+                            st.session_state.selected_calendar_day = day
+
+        st.divider()
+
+        # Detailed Day Inspection Table
+        active_day = st.session_state.selected_calendar_day
+        max_days = calendar.monthrange(selected_year, selected_month)[1]
+        if active_day > max_days:
+            active_day = max_days
+
+        inspected_date_str = f"{selected_year}-{selected_month:02d}-{active_day:02d}"
+        st.write(f"### 🔍 Reservations Summary for **{inspected_date_str}**")
+
+        details_df = month_data[month_data['Date'].astype(str) == inspected_date_str]
+
+        if not details_df.empty:
+            st.success(f"Found {len(details_df)} booking(s) for this date:")
+            display_cols = [c for c in ['Name', 'Department', 'Facilities', 'Time_Slot', 'Date'] if c in details_df.columns]
+            st.dataframe(details_df[display_cols], hide_index=True, use_container_width=True)
+        else:
+            st.info(f"No bookings registered for {inspected_date_str}.")
     else:
-        col_f1, col_f2 = st.columns(2)
-        with col_f1:
-            selected_room = st.selectbox("Filter by Facility", ["All"] + FACILITIES)
-        with col_f2:
-            filter_date = st.date_input("Filter by Date", value=None)
-
-        filtered_df = df_records.copy()
-        if selected_room != "All" and "Facilities" in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df["Facilities"] == selected_room]
-        if filter_date and "Date" in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df["Date"].astype(str) == filter_date.strftime("%Y-%m-%d")]
-
-        st.dataframe(filtered_df, use_container_width=True)
+        st.info("No bookings currently recorded in the database.")
 
 # ------------------------------------------
 # TAB 3: ADMIN PORTAL
@@ -227,7 +305,7 @@ with tab_admin:
                 st.dataframe(df_admin, use_container_width=True)
 
                 row_to_delete = st.number_input("Select Row Index to Delete", min_value=0, max_value=len(df_admin)-1, step=1)
-                if st.button("Delete Selected Booking"):
+                if st.button("Delete Selected Booking", type="primary"):
                     updated_admin_df = df_admin.drop(index=row_to_delete).reset_index(drop=True)
                     conn.update(data=updated_admin_df)
                     st.success(f"🗑️ Row {row_to_delete} removed successfully!")
