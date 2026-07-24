@@ -13,49 +13,59 @@ from streamlit_gsheets import GSheetsConnection
 # 1. PAGE CONFIGURATION & CUSTOM STYLING
 # ==========================================
 st.set_page_config(
-    page_title="PTES Smart Lab Booking",
+    page_title="PTES Smart Classroom Booking",
     page_icon="💻",
     layout="wide"
 )
 
-# Custom CSS for Sidebar, Tabs, and Text Styling
+# Custom CSS for Sidebar, Main Dashboard Background, Tabs, and Text Styling
 st.markdown("""
     <style>
-        /* 1. Custom Sidebar Background Color */
+        /* 1. Main Dashboard / Front Background Color */
+        [data-testid="stAppViewContainer"] {
+            background-color: #FAFAFA; /* Change this to your preferred main background hex color */
+        }
+
+        /* Keep header background consistent with main background */
+        [data-testid="stHeader"] {
+            background-color: transparent;
+        }
+
+        /* 2. Custom Sidebar Background Color */
         [data-testid="stSidebar"] {
-            background-color: #FAF68F;
+            background-color: #F7E987; /* Your custom sidebar background */
             padding-top: 1rem;
         }
 
-        /* 2. Custom Tabs Background & Styling */
+        /* 3. Custom Tabs Background & Styling */
         div[data-baseweb="tab-list"] {
             gap: 8px;
-            background-color: #E7BBFC;
+            background-color: #F0F4F9;
             padding: 8px;
             border-radius: 10px;
         }
 
         button[data-baseweb="tab"] {
-            background-color: #98FA8F;
+            background-color: #FFFFFF;
             border-radius: 8px;
             padding: 8px 16px;
             font-weight: 600;
-            color: ##AA0BF4;
-            border: 1px solid #F7E7FE;
+            color: #333333;
+            border: 1px solid #D1D5DB;
         }
 
         /* Styling for Currently Selected Active Tab */
         button[data-baseweb="tab"][aria-selected="true"] {
-            background-color: #BBFBFC !important;
+            background-color: #1A73E8 !important;
             color: #FFFFFF !important;
             border: 1px solid #1A73E8 !important;
         }
 
-        /* 3. Subtitle Custom Font Styling */
+        /* 4. Subtitle Custom Font Styling */
         .school-subtitle {
             font-size: 24px !important;
             font-weight: 700 !important;
-            color: #8B09C8 !important;
+            color: #8E24AA !important; /* Customized purple title color */
             margin-top: -10px;
             margin-bottom: 25px;
         }
@@ -168,7 +178,7 @@ with st.sidebar:
 # ==========================================
 st.title("💻 Smart Classroom Booking Platform")
 
-# Enriched Subtitle with Larger Font Size
+# Subtitle with custom purple styling
 st.markdown('<p class="school-subtitle">Pusat Tingkatan Enam Sengkurong</p>', unsafe_allow_html=True)
 
 tab_book, tab_calendar, tab_admin = st.tabs(["📝 New Booking", "📅 Interactive Calendar", "🔒 Admin Portal"])
