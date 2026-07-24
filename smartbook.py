@@ -30,7 +30,7 @@ st.markdown("""
         /* 2. Custom Tabs Background & Styling */
         div[data-baseweb="tab-list"] {
             gap: 8px;
-            background-color: #BBFCFA;
+            background-color: #E7BBFC;
             padding: 8px;
             border-radius: 10px;
         }
