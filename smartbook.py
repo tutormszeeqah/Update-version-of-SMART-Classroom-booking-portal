@@ -80,11 +80,15 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 # Facilities List
 FACILITIES = [
-    "Smart Classroom 1",
-    "Smart Classroom 2",
-    "Multimedia Lab",
-    "Conference Room"
+    "Interactive SMART Panel",
+    "Chromebook devices",
+    "Recording Terminal",
+    "Internet Access",
+    "SMART TV"
 ]
+
+# Replaced st.selectbox with st.multiselect
+selected_facilities = st.multiselect("Facilities *", FACILITIES, default=["Interactive SMART Panel"])
 
 # Available Time Slots
 TIME_SLOTS = [
