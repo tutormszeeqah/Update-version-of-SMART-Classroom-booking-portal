@@ -30,11 +30,9 @@ FACILITIES = [
 
 # Available Time Slots
 TIME_SLOTS = [
-    "07:30 - 08:30",
-    "08:30 - 09:30",
-    "10:00 - 11:00",
-    "11:00 - 12:00",
-    "12:30 - 01:30"
+    "08:00 - 09:45",
+    "10:15 - 12:15",
+    "13:15 - 15:15"
 ]
 
 # ==========================================
@@ -137,8 +135,8 @@ with tab_book:
         with col1:
             name = st.text_input("Name *")
             department = st.selectbox("Department *", [
-                "Computer Science", "Mathematics", "Sciences", 
-                "Languages", "Humanities", "Administration"
+                "Computing", "Business / Accounting / Economics", "English/G.P/Malay", 
+                "Mathematics", "Sciences", "Languages", "Humanities", "Administration", "Others"
             ])
             facility = st.selectbox("Facilities *", FACILITIES)
 
@@ -152,7 +150,8 @@ with tab_book:
             if not name:
                 st.error("⚠️ Please fill in all required fields marked with *.")
             else:
-                date_str = booking_date.strftime("%Y-%m-%d")
+                # Format date to match Google Sheet DD/MM/YYYY format
+                date_str = booking_date.strftime("%d/%m/%Y")
                 df_existing = load_booking_data()
 
                 # Clash Detection Logic
@@ -228,7 +227,9 @@ with tab_calendar:
 
     if not master_data.empty:
         display_df = master_data.copy()
-        display_df['datetime_obj'] = pd.to_datetime(display_df['Date'], errors='coerce')
+        
+        # Parse DD/MM/YYYY dates flexibly with dayfirst=True
+        display_df['datetime_obj'] = pd.to_datetime(display_df['Date'], dayfirst=True, errors='coerce')
 
         # Filter dataset for selected month & year
         month_data = display_df[
@@ -254,8 +255,14 @@ with tab_calendar:
             for i, day in enumerate(week):
                 with grid_cols[i]:
                     if day != 0:
-                        day_str = f"{selected_year}-{selected_month:02d}-{day:02d}"
-                        day_bookings = month_data[month_data['Date'].astype(str) == day_str]
+                        # Match string format in Google Sheet: DD/MM/YYYY
+                        day_str = f"{day:02d}/{selected_month:02d}/{selected_year}"
+                        
+                        # Compare against parsed datetime or raw Date string
+                        day_bookings = month_data[
+                            (month_data['Date'].astype(str) == day_str) | 
+                            (month_data['datetime_obj'].dt.day == day)
+                        ]
                         booking_count = len(day_bookings)
 
                         if booking_count > 0:
@@ -274,10 +281,13 @@ with tab_calendar:
         if active_day > max_days:
             active_day = max_days
 
-        inspected_date_str = f"{selected_year}-{selected_month:02d}-{active_day:02d}"
+        inspected_date_str = f"{active_day:02d}/{selected_month:02d}/{selected_year}"
         st.write(f"### 🔍 Reservations Summary for **{inspected_date_str}**")
 
-        details_df = month_data[month_data['Date'].astype(str) == inspected_date_str]
+        details_df = month_data[
+            (month_data['Date'].astype(str) == inspected_date_str) |
+            (month_data['datetime_obj'].dt.day == active_day)
+        ]
 
         if not details_df.empty:
             st.success(f"Found {len(details_df)} booking(s) for this date:")
