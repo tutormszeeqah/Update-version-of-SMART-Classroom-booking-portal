@@ -23,7 +23,7 @@ st.markdown("""
     <style>
         /* 1. Main Dashboard / Front Background Color */
         [data-testid="stAppViewContainer"] {
-            background-color: #8FF8FA; /* Change this to your preferred main background hex color */
+            background-color: #8FF8FA;
         }
 
         /* Keep header background consistent with main background */
@@ -33,7 +33,7 @@ st.markdown("""
 
         /* 2. Custom Sidebar Background Color */
         [data-testid="stSidebar"] {
-            background-color: #F7E987; /* Your custom sidebar background */
+            background-color: #F7E987;
             padding-top: 1rem;
         }
 
@@ -65,7 +65,7 @@ st.markdown("""
         .school-subtitle {
             font-size: 24px !important;
             font-weight: 700 !important;
-            color: #8E24AA !important; /* Customized purple title color */
+            color: #8E24AA !important;
             margin-top: -10px;
             margin-bottom: 25px;
         }
@@ -78,7 +78,7 @@ ADMIN_WA_NUMBER = "6737318186"
 # Initialize Google Sheets Connection
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# Facilities List
+# Facilities Options List
 FACILITIES = [
     "Interactive SMART Panel",
     "Chromebook devices",
@@ -86,9 +86,6 @@ FACILITIES = [
     "Internet Access",
     "SMART TV"
 ]
-
-# Replaced st.selectbox with st.multiselect
-selected_facilities = st.multiselect("Facilities *", FACILITIES, default=["Interactive SMART Panel"])
 
 # Available Time Slots
 TIME_SLOTS = [
@@ -129,7 +126,7 @@ def send_notification_email(booking_details):
             <ul>
                 <li><b>Name:</b> {booking_details['Name']}</li>
                 <li><b>Department:</b> {booking_details['Department']}</li>
-                <li><b>Facilities:</b> {booking_details['Facilities']}</li>
+                <li><b>Facilities Requested:</b> {booking_details['Facilities']}</li>
                 <li><b>Date:</b> {booking_details['Date']}</li>
                 <li><b>Time Slot:</b> {booking_details['Time_Slot']}</li>
             </ul>
@@ -191,7 +188,7 @@ tab_book, tab_calendar, tab_admin = st.tabs(["📝 New Booking", "📅 Interacti
 # TAB 1: NEW BOOKING FORM & PREVIEW
 # ------------------------------------------
 with tab_book:
-    st.subheader("Reserve a Smart Classroom Facility")
+    st.subheader("Reserve Smart Classroom Facilities")
     
     with st.form("booking_form", clear_on_submit=False):
         col1, col2 = st.columns(2)
@@ -202,7 +199,12 @@ with tab_book:
                 "Computing", "Business / Accounting / Economics", "English/G.P/Malay", 
                 "Mathematics", "Sciences", "Languages", "Humanities", "Administration", "Others"
             ])
-            facility = st.selectbox("Facilities *", FACILITIES)
+            # Multi-select widget allowing tutors to choose multiple items
+            selected_facilities = st.multiselect(
+                "Facilities Required *", 
+                FACILITIES, 
+                default=["Interactive SMART Panel"]
+            )
 
         with col2:
             booking_date = st.date_input("Date *", min_value=date.today())
@@ -218,32 +220,33 @@ with tab_book:
         submitted = st.form_submit_button("Submit & Confirm Reservation")
 
         if submitted:
-            if not name:
-                st.error("⚠️ Please fill in all required fields marked with *.")
+            if not name or not selected_facilities:
+                st.error("⚠️ Please fill in all required fields marked with *, including selecting at least one facility.")
             else:
                 date_str = booking_date.strftime("%d/%m/%Y")
+                # Format the list into a clean string for storage and notification
+                facilities_str = ", ".join(selected_facilities)
                 df_existing = load_booking_data()
 
                 # Clash Detection Logic
                 clash = False
-                if not df_existing.empty and {"Date", "Time_Slot", "Facilities"}.issubset(df_existing.columns):
+                if not df_existing.empty and {"Date", "Time_Slot"}.issubset(df_existing.columns):
                     matches = df_existing[
                         (df_existing["Date"].astype(str) == date_str) &
-                        (df_existing["Time_Slot"] == time_slot) &
-                        (df_existing["Facilities"] == facility)
+                        (df_existing["Time_Slot"] == time_slot)
                     ]
                     if not matches.empty:
                         clash = True
 
                 if clash:
-                    st.error(f"❌ **Booking Conflict:** {facility} is already booked for **{time_slot}** on **{date_str}**. Please select another slot or room.")
+                    st.error(f"❌ **Booking Conflict:** The time slot **{time_slot}** on **{date_str}** is already booked. Please select another slot or date.")
                 else:
                     new_entry = pd.DataFrame([{
                         "Name": name,
                         "Department": department,
                         "Date": date_str,
                         "Time_Slot": time_slot,
-                        "Facilities": facility
+                        "Facilities": facilities_str
                     }])
 
                     updated_df = pd.concat([df_existing, new_entry], ignore_index=True)
@@ -260,7 +263,7 @@ with tab_book:
                         with p_col1:
                             st.markdown(f"👤 **Name:** `{name}`")
                             st.markdown(f"🏢 **Department:** `{department}`")
-                            st.markdown(f"🏫 **Facility / Room:** `{facility}`")
+                            st.markdown(f"🏫 **Facilities Required:** `{facilities_str}`")
                         with p_col2:
                             st.markdown(f"📅 **Date:** `{date_str}`")
                             st.markdown(f"⏰ **Time Slot:** `{time_slot}`")
@@ -279,7 +282,7 @@ with tab_book:
                             f"📌 *NEW SMARTLAB BOOKING NOTIFICATION*\n\n"
                             f"👤 *Name:* {name}\n"
                             f"🏢 *Department:* {department}\n"
-                            f"🏫 *Facility:* {facility}\n"
+                            f"🏫 *Facilities:* {facilities_str}\n"
                             f"📅 *Date:* {date_str}\n"
                             f"⏰ *Time Slot:* {time_slot}"
                         )
