@@ -26,10 +26,11 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 # Facilities List
 FACILITIES = [
-    "Smart Classroom 1",
-    "Smart Classroom 2",
-    "Multimedia Lab",
-    "Conference Room"
+    "Smart Interactive Panel",
+    "Smart Chromebook",
+    "Multimedia Smart TV",
+    "Recording Terminal",
+    "Internet Access"
 ]
 
 # Available Time Slots
