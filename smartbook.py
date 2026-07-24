@@ -46,7 +46,7 @@ st.markdown("""
 
         /* Styling for Currently Selected Active Tab */
         button[data-baseweb="tab"][aria-selected="true"] {
-            background-color: #1A73E8 !important;
+            background-color: #BBFBFC !important;
             color: #FFFFFF !important;
             border: 1px solid #1A73E8 !important;
         }
