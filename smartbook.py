@@ -13,7 +13,7 @@ from streamlit_gsheets import GSheetsConnection
 # 1. PAGE CONFIGURATION & CUSTOM STYLING
 # ==========================================
 st.set_page_config(
-    page_title="PTES Smart Classroom Booking",
+    page_title="PTES Smart Classroom Digital Log",
     page_icon="💻",
     layout="wide"
 )
@@ -23,7 +23,7 @@ st.markdown("""
     <style>
         /* 1. Main Dashboard / Front Background Color */
         [data-testid="stAppViewContainer"] {
-            background-color: #FAFAFA; /* Change this to your preferred main background hex color */
+            background-color: #8FF8FA; /* Change this to your preferred main background hex color */
         }
 
         /* Keep header background consistent with main background */
