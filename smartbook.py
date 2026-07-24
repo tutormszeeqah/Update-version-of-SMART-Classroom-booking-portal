@@ -13,7 +13,7 @@ from streamlit_gsheets import GSheetsConnection
 # 1. PAGE CONFIGURATION & CUSTOM STYLING
 # ==========================================
 st.set_page_config(
-    page_title="PTES Smart Classroom Booking",
+    page_title="PTES Smart Lab Booking",
     page_icon="💻",
     layout="wide"
 )
@@ -23,25 +23,25 @@ st.markdown("""
     <style>
         /* 1. Custom Sidebar Background Color */
         [data-testid="stSidebar"] {
-            background-color: #F0F4F9;
+            background-color: #FAF68F;
             padding-top: 1rem;
         }
 
         /* 2. Custom Tabs Background & Styling */
         div[data-baseweb="tab-list"] {
             gap: 8px;
-            background-color: #EBF3FE;
+            background-color: #BBFCFA;
             padding: 8px;
             border-radius: 10px;
         }
 
         button[data-baseweb="tab"] {
-            background-color: #FFFFFF;
+            background-color: #98FA8F;
             border-radius: 8px;
             padding: 8px 16px;
             font-weight: 600;
-            color: #333333;
-            border: 1px solid #D1D5DB;
+            color: ##AA0BF4;
+            border: 1px solid #F7E7FE;
         }
 
         /* Styling for Currently Selected Active Tab */
@@ -55,7 +55,7 @@ st.markdown("""
         .school-subtitle {
             font-size: 24px !important;
             font-weight: 700 !important;
-            color: #1A73E8 !important;
+            color: #F7E7FE !important;
             margin-top: -10px;
             margin-bottom: 25px;
         }
