@@ -55,7 +55,7 @@ st.markdown("""
         .school-subtitle {
             font-size: 24px !important;
             font-weight: 700 !important;
-            color: #F7E7FE !important;
+            color: #8B09C8 !important;
             margin-top: -10px;
             margin-bottom: 25px;
         }
