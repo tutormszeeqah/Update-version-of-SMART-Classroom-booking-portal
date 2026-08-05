@@ -73,7 +73,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Admin WhatsApp Phone Number
-ADMIN_WA_NUMBER = "6737318186"
+ADMIN_WA_NUMBER = "6738358186"
 
 # Initialize Google Sheets Connection
 conn = st.connection("gsheets", type=GSheetsConnection)
