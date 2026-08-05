@@ -1,4 +1,4 @@
-********************* COLOR VERSION of portal **************************
+#********************* COLOR VERSION of portal **************************
 import streamlit as st
 import pandas as pd
 import smtplib
