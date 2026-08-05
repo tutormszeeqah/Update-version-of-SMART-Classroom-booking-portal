@@ -1,12 +1,13 @@
-import streamlit as st
+import os
+import calendar
+import urllib.parse
+from datetime import datetime, date
 import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime, date
-import calendar
-import urllib.parse
 from PIL import Image
+import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
 # ==========================================
@@ -18,26 +19,26 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for Sidebar, Main Dashboard Background, Tabs, and Text Styling
+# Custom CSS for Dashboard Background, Sidebar, Tabs, Subtitles, and Footer
 st.markdown("""
     <style>
-        /* 1. Main Dashboard / Front Background Color */
+        /* Main Dashboard Background Color */
         [data-testid="stAppViewContainer"] {
             background-color: #8FF8FA;
         }
 
-        /* Keep header background consistent with main background */
+        /* Keep header background transparent */
         [data-testid="stHeader"] {
             background-color: transparent;
         }
 
-        /* 2. Custom Sidebar Background Color */
+        /* Custom Sidebar Background Color */
         [data-testid="stSidebar"] {
             background-color: #F7E987;
             padding-top: 1rem;
         }
 
-        /* 3. Custom Tabs Background & Styling */
+        /* Custom Tabs Background & Styling */
         div[data-baseweb="tab-list"] {
             gap: 8px;
             background-color: #F0F4F9;
@@ -61,7 +62,7 @@ st.markdown("""
             border: 1px solid #1A73E8 !important;
         }
 
-        /* 4. Subtitle Custom Font Styling */
+        /* Subtitle Custom Font Styling */
         .school-subtitle {
             font-size: 24px !important;
             font-weight: 700 !important;
@@ -69,16 +70,28 @@ st.markdown("""
             margin-top: -10px;
             margin-bottom: 25px;
         }
+
+        /* Sticky Footer Styling */
+        .portal-footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #ffffff;
+            color: #333333;
+            text-align: center;
+            padding: 8px 0px;
+            font-size: 13px;
+            border-top: 1px solid #e0e0e0;
+            box-shadow: 0px -2px 5px rgba(0,0,0,0.05);
+            z-index: 999;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# Admin WhatsApp Phone Number
+# Application Constants
 ADMIN_WA_NUMBER = "6738358186"
 
-# Initialize Google Sheets Connection
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-# Facilities Options List
 FACILITIES = [
     "Interactive SMART Panel",
     "Chromebook devices",
@@ -87,16 +100,44 @@ FACILITIES = [
     "SMART TV"
 ]
 
-# Available Time Slots
 TIME_SLOTS = [
     "08:00 - 09:45",
     "10:15 - 12:15",
     "13:15 - 15:15"
 ]
 
+# Initialize Google Sheets Connection
+conn = st.connection("gsheets", type=GSheetsConnection)
+
 # ==========================================
 # 2. HELPER FUNCTIONS
 # ==========================================
+
+def display_school_logo(logo_filename="ptes_logo.png"):
+    """
+    Safely resolves the file path for the logo image in the current directory
+    and renders it in Streamlit.
+    """
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(current_dir, logo_filename)
+
+    if os.path.exists(logo_path):
+        logo_image = Image.open(logo_path)
+        st.image(logo_image, use_container_width=True)
+    elif os.path.exists(logo_filename):
+        logo_image = Image.open(logo_filename)
+        st.image(logo_image, use_container_width=True)
+    else:
+        st.info(f"📌 Add '{logo_filename}' to your root GitHub repository directory to display the school logo.")
+
+def render_portal_footer():
+    """Renders a fixed portal footer at the bottom of the application."""
+    footer_html = """
+    <div class="portal-footer">
+        <p style="margin:0;">© Pusat Tingkatan Enam Sengkurong | SmartLab Digital Log Portal</p>
+    </div>
+    """
+    st.markdown(footer_html, unsafe_allow_html=True)
 
 def load_booking_data():
     """Fetches real-time booking records from Google Sheets."""
@@ -142,7 +183,6 @@ def send_notification_email(booking_details):
         msg["To"] = receiver_email
         msg.attach(MIMEText(html_content, "html"))
 
-        # Send via Gmail SMTP
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(sender_email, sender_password)
@@ -157,11 +197,8 @@ def send_notification_email(booking_details):
 # 3. SIDEBAR BRANDING & LAYOUT
 # ==========================================
 with st.sidebar:
-    try:
-        logo = Image.open("ptes_logo.png")
-        st.image(logo, use_container_width=True)
-    except Exception:
-        st.info("📌 Add 'ptes_logo.png' to your GitHub repository to display the school logo.")
+    # Safe Logo Loading Call
+    display_school_logo("ptes_logo.png")
 
     st.title("PTES SmartLab")
     st.caption("Nurturing Resilient Leaders & Future Ready Citizens")
@@ -178,8 +215,6 @@ with st.sidebar:
 # 4. MAIN APPLICATION INTERFACE
 # ==========================================
 st.title("💻 Smart Classroom Booking Platform")
-
-# Subtitle with custom purple styling
 st.markdown('<p class="school-subtitle">Pusat Tingkatan Enam Sengkurong</p>', unsafe_allow_html=True)
 
 tab_book, tab_calendar, tab_admin = st.tabs(["📝 New Booking", "📅 Interactive Calendar", "🔒 Admin Portal"])
@@ -199,7 +234,6 @@ with tab_book:
                 "Computing", "Business / Accounting / Economics", "English/G.P/Malay", 
                 "Mathematics", "Sciences", "Languages", "Humanities", "Administration", "Others"
             ])
-            # Multi-select widget allowing tutors to choose multiple items
             selected_facilities = st.multiselect(
                 "Facilities Required *", 
                 FACILITIES, 
@@ -209,8 +243,6 @@ with tab_book:
         with col2:
             booking_date = st.date_input("Date *", min_value=date.today())
             time_slot = st.selectbox("Time Slot *", TIME_SLOTS)
-            
-            # Notification Preference Selector
             notify_option = st.selectbox("Notify Admin via", [
                 "Email Notification", 
                 "WhatsApp Link", 
@@ -224,7 +256,6 @@ with tab_book:
                 st.error("⚠️ Please fill in all required fields marked with *, including selecting at least one facility.")
             else:
                 date_str = booking_date.strftime("%d/%m/%Y")
-                # Format the list into a clean string for storage and notification
                 facilities_str = ", ".join(selected_facilities)
                 df_existing = load_booking_data()
 
@@ -253,7 +284,6 @@ with tab_book:
                     conn.update(data=updated_df)
                     
                     st.success("🎉 Booking successfully recorded!")
-                    
                     st.markdown("---")
                     st.markdown("### 📋 Booked SmartLab Reservation Summary")
                     
@@ -288,7 +318,6 @@ with tab_book:
                         )
                         encoded_msg = urllib.parse.quote(wa_message)
                         wa_url = f"https://wa.me/{ADMIN_WA_NUMBER}?text={encoded_msg}"
-                        
                         st.markdown(f'👉 [**Click Here to Send WhatsApp Notification to Admin**]({wa_url})')
 
 # ------------------------------------------
@@ -312,7 +341,6 @@ with tab_calendar:
 
     if not master_data.empty:
         display_df = master_data.copy()
-        
         display_df['datetime_obj'] = pd.to_datetime(display_df['Date'], dayfirst=True, errors='coerce')
 
         month_data = display_df[
@@ -336,7 +364,6 @@ with tab_calendar:
                 with grid_cols[i]:
                     if day != 0:
                         day_str = f"{day:02d}/{selected_month:02d}/{selected_year}"
-                        
                         day_bookings = month_data[
                             (month_data['Date'].astype(str) == day_str) | 
                             (month_data['datetime_obj'].dt.day == day)
@@ -401,3 +428,8 @@ with tab_admin:
                 st.info("No records to manage.")
         else:
             st.error("🔒 Invalid Password.")
+
+# ==========================================
+# 5. RENDER PORTAL FOOTER
+# ==========================================
+render_portal_footer()
