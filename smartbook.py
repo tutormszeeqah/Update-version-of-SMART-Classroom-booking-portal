@@ -406,7 +406,7 @@ st.markdown("---")
 st.markdown(
     """
     <div style="text-align: center; width: 100%;">
-        <p style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">✨ Digital 9700 Biology Resource Portal ✨</p>
+        <p style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">✨ Digital Smart Classroom Reservation Portal ✨</p>
         <p style="color: gray; font-size: 14px;">Developer: HNHaziqah@HHartini Computer Science PTES</p>
     </div>
     """,
