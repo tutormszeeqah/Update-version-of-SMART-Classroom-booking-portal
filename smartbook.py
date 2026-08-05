@@ -159,12 +159,6 @@ def send_notification_email(booking_details):
 # 3. SIDEBAR BRANDING & LAYOUT
 # ==========================================
 with st.sidebar:
-    try:
-        logo = Image.open("ptes_logo.PNG")
-        st.image(logo, use_container_width=True)
-    except Exception:
-        st.info("📌 Add 'ptes_logo.png' to your GitHub repository to display the school logo.")
-
     st.title("PTES SmartLab")
     st.caption("Nurturing Resilient Leaders & Future Ready Citizens")
     st.markdown("---")
