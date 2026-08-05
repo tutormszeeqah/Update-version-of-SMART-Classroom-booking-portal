@@ -158,12 +158,39 @@ def send_notification_email(booking_details):
 # ==========================================
 # 3. SIDEBAR BRANDING & LAYOUT
 # ==========================================
+# ==========================================
+# 3. SIDEBAR BRANDING & LAYOUT
+# ==========================================
 with st.sidebar:
-    try:
-        logo = Image.open("ptes_logo.PNG")
-        st.image(logo, use_container_width=True)
-    except Exception:
-        st.info("📌 Add 'ptes_logo.png' to your GitHub repository to display the school logo.")
+    # ---------------------------------------------------------
+    # Robust Logo Finder (Handles Case Sensitivity & Paths)
+    # ---------------------------------------------------------
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # List of possible filename / extension variations to check
+    possible_logo_names = [
+        "ptes_logo.png",
+        "ptes_logo.PNG",
+        "PTES_LOGO.png",
+        "PTES_LOGO.PNG"
+    ]
+    
+    logo_loaded = False
+    for logo_name in possible_logo_names:
+        full_logo_path = os.path.join(script_dir, logo_name)
+        
+        # Check absolute path first, then relative path
+        if os.path.exists(full_logo_path):
+            st.image(full_logo_path)
+            logo_loaded = True
+            break
+        elif os.path.exists(logo_name):
+            st.image(logo_name)
+            logo_loaded = True
+            break
+            
+    if not logo_loaded:
+        st.info("📌 Add 'ptes_logo.png' to your GitHub repository root to display the school logo.")
 
     st.title("PTES SmartLab")
     st.caption("Nurturing Resilient Leaders & Future Ready Citizens")
@@ -175,7 +202,7 @@ with st.sidebar:
         st.success("🟢 Google Sheets Connected")
     else:
         st.warning("🟡 Sheet empty or initializing...")
-
+#********************************************************
 # ==========================================
 # 4. MAIN APPLICATION INTERFACE
 # ==========================================
