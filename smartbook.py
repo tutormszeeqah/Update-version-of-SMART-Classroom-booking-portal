@@ -159,7 +159,7 @@ def send_notification_email(booking_details):
 # ==========================================
 with st.sidebar:
     try:
-        logo = Image.open("ptes_logo.png")
+        logo = Image.open("ptes_logo.PNG")
         st.image(logo, use_container_width=True)
     except Exception:
         st.info("📌 Add 'ptes_logo.png' to your GitHub repository to display the school logo.")
